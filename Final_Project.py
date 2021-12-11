@@ -12,6 +12,9 @@ import altair as alt
 import operator
 import time
 
+def someFunction(robot_id):
+    return []
+
 class FriendshipGame:
     data = {}
     time_matrix = pd.DataFrame({'time':list(range(1, 101))})
@@ -144,7 +147,7 @@ class FriendshipGame:
         # vis_data: normally output from predictRobot
         vis_data = self.predictRobot(robot_id)
         if vis_data == []:
-            return
+            return []
         df = pd.DataFrame(vis_data[0])
         vis_line = alt.Chart(df).mark_line().encode(
             alt.X('time:Q'),
@@ -316,8 +319,7 @@ if __name__ == '__main__':
                 real_value = float(robotdata.iloc[[game.expire[bet_ptr][0]]]['t_' + str(int(robotdata.iloc[[game.expire[bet_ptr][0]]]['expires']))])
                 print("Real value is: %d"%real_value)
                 # ------------------------------------------------
-                
-            bet_ptr = bet_ptr + 1
+                bet_ptr = bet_ptr + 1
                 
             else:
                 print("No bet set")
