@@ -4,13 +4,17 @@ import matplotlib.pyplot as plt
 from sklearn.svm import SVR
 from random import randrange
 import numpy as np
-
+import streamlit as st
 import Robogame as rg
 import networkx as nx
 import time, json
 import altair as alt
 import operator
 import time
+
+
+def someFunction(robot_id):
+    return []
 
 class FriendshipGame:
     data = {}
@@ -144,7 +148,7 @@ class FriendshipGame:
         # vis_data: normally output from predictRobot
         vis_data = self.predictRobot(robot_id)
         if vis_data == []:
-            return
+            return []
         df = pd.DataFrame(vis_data[0])
         vis_line = alt.Chart(df).mark_line().encode(
             alt.X('time:Q'),
@@ -219,6 +223,8 @@ class FriendshipGame:
 
 # Main function
 if __name__ == '__main__':
+    predVis = st.empty()
+    predValue = st.empty()
     # ---------Do not need in real Game---------------
     robotdata = pd.read_csv("../server/example1/examplematch1.robotdata.csv")
     team2 = rg.Robogame("alice")
@@ -310,16 +316,16 @@ if __name__ == '__main__':
                     else:
                         team1.setBets({game.expire[bet_ptr][0]: data[1]})
                     print("Bet set! Robot %d: %.2f"%(game.expire[bet_ptr][0], data[1]))
+                    predVis.write(data[0])
+                    predValue.write(data[1])
                     
                 # ---------Do not need in real Game---------------
                 # real value is
                 real_value = float(robotdata.iloc[[game.expire[bet_ptr][0]]]['t_' + str(int(robotdata.iloc[[game.expire[bet_ptr][0]]]['expires']))])
                 print("Real value is: %d"%real_value)
                 # ------------------------------------------------
-                
-            bet_ptr = bet_ptr + 1
-                
-            else:
+                bet_ptr = bet_ptr + 1
+            else: 
                 print("No bet set")
                 break
     print("Finished")
