@@ -1,3 +1,4 @@
+from numpy.lib.type_check import real
 import pandas as pd
 from sklearn import linear_model
 import matplotlib.pyplot as plt
@@ -13,13 +14,26 @@ import operator
 import time
 
 
-def someFunction(robot_id):
-    return []
+def findFamily(robot_id, genealogy):
+    family_member = []
+
+    for neighbor_id in genealogy.neighbors(robot_id):
+        # print(neighbor_id)
+        # time1 can be replaced by the real time information about the robots
+        family_member.append((neighbor_id, 1))
+        nneighbors = genealogy.neighbors(neighbor_id)
+        if nneighbors:
+            for nid in nneighbors:
+                family_member.append((nid, 2))
+            
+    return family_member
+    
 
 class FriendshipGame:
     data = {}
     time_matrix = pd.DataFrame({'time':list(range(1, 101))})
     expire = [] # [(robot_id, expire_time)]
+    
     
     def init_expiration_time(self, df):
         # df = game.getRobotInfo()
@@ -63,11 +77,13 @@ class FriendshipGame:
         else:
             return []
                 
-    def appendFamilyTree(self, robot_id):
+    def appendFamilyTree(self, robot_id, tree):
         # return {time1:(value, min, max, iteration(useless), generation(useless)), time2...}
         time_dict = {}
         # obtain family tree info from someFunction, which returns [(id, generation)]
-        familyInfo = someFunction(robot_id)
+        genealogy = nx.tree_graph(tree).to_undirected()
+        familyInfo = findFamily(robot_id, genealogy)
+        print(familyInfo)
         # search through the list of relatives
         for t in range(0, 100):
             contain_flag = False
@@ -77,13 +93,35 @@ class FriendshipGame:
             if contain_flag == False:
                 # check in relative robots for hints
                 for relative_robot in familyInfo:
-                    for datapoint in self.data[int(relative_robot[0])]:
-                        if int(datapoint['time']) == t:
-                            if t in time_dict.keys():
-                                old = time_dict[t]
-                                if (old[4] == 1 and relative_robot[1] == 2): # original closer, ignore
-                                    continue
-                                elif (old[4] == 2 and relative_robot[1] == 1): # new closer, use new
+                    if int(relative_robot[0]) in self.data.keys():
+                        for datapoint in self.data[int(relative_robot[0])]:
+                            if int(datapoint['time']) == t:
+                                if t in time_dict.keys():
+                                    old = time_dict[t]
+                                    if (old[4] == 1 and relative_robot[1] == 2): # original closer, ignore
+                                        continue
+                                    elif (old[4] == 2 and relative_robot[1] == 1): # new closer, use new
+                                        range_max = datapoint['value'] + relative_robot[1] * 5
+                                        range_min = datapoint['value'] - relative_robot[1] * 5
+                                        if range_max > 100:
+                                            range_max = 100
+                                        if range_min < 0:
+                                            range_min = 0
+                                        time_dict.update({t: (datapoint['value'], range_max, range_min, 1, relative_robot[1])})
+                                    else:
+                                        range_max = datapoint['value'] + relative_robot[1] * 5
+                                        range_min = datapoint['value'] - relative_robot[1] * 5
+                                        if range_max > 100:
+                                            range_max = 100
+                                        if range_min < 0:
+                                            range_min = 0
+                                        if range_max > old[1]:
+                                            range_max = old[1]
+                                        if range_min < old[2]:
+                                            range_min = old[2]
+                                        mean = (old[0] * old[3] + datapoint['value']) / (old[3] + 1)
+                                        time_dict.update({t: (mean, range_max, range_min, old[3] + 1, relative_robot[1])})
+                                else: # new
                                     range_max = datapoint['value'] + relative_robot[1] * 5
                                     range_min = datapoint['value'] - relative_robot[1] * 5
                                     if range_max > 100:
@@ -91,31 +129,10 @@ class FriendshipGame:
                                     if range_min < 0:
                                         range_min = 0
                                     time_dict.update({t: (datapoint['value'], range_max, range_min, 1, relative_robot[1])})
-                                else:
-                                    range_max = datapoint['value'] + relative_robot[1] * 5
-                                    range_min = datapoint['value'] - relative_robot[1] * 5
-                                    if range_max > 100:
-                                        range_max = 100
-                                    if range_min < 0:
-                                        range_min = 0
-                                    if range_max > old[1]:
-                                        range_max = old[1]
-                                    if range_min < old[2]:
-                                        range_min = old[2]
-                                    mean = (old[0] * old[3] + datapoint['value']) / (old[3] + 1)
-                                    time_dict.update({t: (mean, range_max, range_min, old[3] + 1)})
-                            else: # new
-                                range_max = datapoint['value'] + relative_robot[1] * 5
-                                range_min = datapoint['value'] - relative_robot[1] * 5
-                                if range_max > 100:
-                                    range_max = 100
-                                if range_min < 0:
-                                    range_min = 0
-                                time_dict.update({t: (datapoint['value'], range_max, range_min, 1, relative_robot[1])})
         return time_dict
                         
                 
-    def predictRobot(self, robot_id):
+    def predictRobot(self, robot_id, tree):
         # input: id of the Robot
         # output: list of dictionary, with "time" and "value" as keys
         
@@ -124,7 +141,7 @@ class FriendshipGame:
             return []
         df = pd.DataFrame(self.data[robot_id])
         # append data from Family Tree
-        family_data = self.appendFamilyTree(robot_id)
+        family_data = self.appendFamilyTree(robot_id, tree)
         family_list = []
         for t in family_data.keys():
             df.loc[len(df.index)] = [robot_id, t, family_data[t][0]]
@@ -144,9 +161,9 @@ class FriendshipGame:
             output.append({'time': i, 'value': svr_pred[i]})
         return (output, expiration_time, prediction, family_list)
     
-    def printVisual(self, robot_id):
+    def printVisual(self, robot_id, tree):
         # vis_data: normally output from predictRobot
-        vis_data = self.predictRobot(robot_id)
+        vis_data = self.predictRobot(robot_id, tree)
         if vis_data == []:
             return []
         df = pd.DataFrame(vis_data[0])
@@ -223,8 +240,12 @@ class FriendshipGame:
 
 # Main function
 if __name__ == '__main__':
+    st.header("SI 649 Final Project")
+    st.header("Group: EDG")
+    status = st.empty()
     predVis = st.empty()
     predValue = st.empty()
+    realValue = st.empty()
     # ---------Do not need in real Game---------------
     robotdata = pd.read_csv("../server/example1/examplematch1.robotdata.csv")
     team2 = rg.Robogame("alice")
@@ -249,12 +270,15 @@ if __name__ == '__main__':
             break
         if (timetogo <= 0):
             print("Let's go!")
+            status.write("Game starts")
             break
         print("waiting to launch... game will start in " + str(int(timetogo)))
-        time.sleep(0.3) # sleep 1 second at a time, wait for the game to start
+        time.sleep(1) # sleep 1 second at a time, wait for the game to start
+        status.write("Waiting for game to start")
         
     # Initialize expiration time
     game.init_expiration_time(team1.getRobotInfo())
+    tree = team1.getTree()
     print("Robot Expiration Time init complete")
     
     # Set initial bet in case of error
@@ -270,6 +294,7 @@ if __name__ == '__main__':
     team2.setBets(omniplayerAllBets2)
     # ------------------------------------------------
     print("Initial bet complete")
+    status.write("Initialization Completed")
     
     # Time loop
     game_time = team1.getGameTime()
@@ -304,7 +329,7 @@ if __name__ == '__main__':
             cur_time = game_time['curtime']
             print("Current time is: %.2f"%cur_time)
             if game.expire[bet_ptr][1] - cur_time < 3:
-                data = game.printVisual(game.expire[bet_ptr][0])
+                data = game.printVisual(game.expire[bet_ptr][0], tree)
                 if data == []:
                     team1.setBets({game.expire[bet_ptr][0]: 50})
                     print("Bet set! Robot %d: %.2f"%(game.expire[bet_ptr][0], 50))
@@ -317,12 +342,13 @@ if __name__ == '__main__':
                         team1.setBets({game.expire[bet_ptr][0]: data[1]})
                     print("Bet set! Robot %d: %.2f"%(game.expire[bet_ptr][0], data[1]))
                     predVis.write(data[0])
-                    predValue.write(data[1])
+                    predValue.write("Our estimated value is: %d"%data[1])
                     
                 # ---------Do not need in real Game---------------
                 # real value is
                 real_value = float(robotdata.iloc[[game.expire[bet_ptr][0]]]['t_' + str(int(robotdata.iloc[[game.expire[bet_ptr][0]]]['expires']))])
-                print("Real value is: %d"%real_value)
+                print("Real value is: %.2f"%real_value)
+                realValue.write("The real value is: %.2f"%real_value)
                 # ------------------------------------------------
                 bet_ptr = bet_ptr + 1
             else: 
