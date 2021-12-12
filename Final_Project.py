@@ -243,6 +243,7 @@ if __name__ == '__main__':
     st.header("SI 649 Final Project")
     st.header("Group: EDG")
     status = st.empty()
+    sys_time = st.empty()
     predVis = st.empty()
     predValue = st.empty()
     realValue = st.empty()
@@ -306,6 +307,7 @@ if __name__ == '__main__':
         if cur_time >= 100:
             break
         print("Current system time: %.2f"%cur_time)
+        sys_time.write("Current time is: %.2f"%cur_time)
         
         # set interest robot
         while cur_time - set_time < 1:
@@ -313,12 +315,17 @@ if __name__ == '__main__':
         team1.setRobotInterest([game.expire[interest_ptr]])
         set_time = cur_time
         print("Set interest Robot to be: %d"%game.expire[interest_ptr][0])
+        status.write("Set interest Robot to be: %d"%game.expire[interest_ptr][0])
         interest_ptr = interest_ptr + 1
         
         # Grab hints
         hints = team1.getHints()
         hints_json = json.dumps(team1.getAllPredictionHints())
+        print("Current Hints:")
+        print(hints_json)
         game.updateData(hints_json)
+        print("Current Data: ")
+        print(game.data)
         
         # choose the robot that needs to be betted on
         while bet_ptr < 100:
@@ -328,11 +335,13 @@ if __name__ == '__main__':
                 break
             cur_time = game_time['curtime']
             print("Current time is: %.2f"%cur_time)
+            sys_time.write("Current time is: %.2f"%cur_time)
             if game.expire[bet_ptr][1] - cur_time < 3:
                 data = game.printVisual(game.expire[bet_ptr][0], tree)
                 if data == []:
                     team1.setBets({game.expire[bet_ptr][0]: 50})
                     print("Bet set! Robot %d: %.2f"%(game.expire[bet_ptr][0], 50))
+                    status.write("Bet set! Robot %d: %.2f"%(game.expire[bet_ptr][0], 50))
                 else:
                     if data[1] > 100:
                         team1.setBets({game.expire[bet_ptr][0]: 100})
@@ -353,5 +362,6 @@ if __name__ == '__main__':
                 bet_ptr = bet_ptr + 1
             else: 
                 print("No bet set")
+                status.write("No bet set")
                 break
     print("Finished")
