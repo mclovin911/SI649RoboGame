@@ -315,7 +315,7 @@ if __name__ == '__main__':
         team1.setRobotInterest([game.expire[interest_ptr][0], game.expire[interest_ptr][0]])
         print("Set interest Robot to be: %d"%(game.expire[interest_ptr][0]))
         status.write("Set interest Robot to be: %d"%(game.expire[interest_ptr][0]))
-        if interest_ptr < 100:
+        if interest_ptr < (100 - 1):
             interest_ptr = interest_ptr + 1
         
         # Grab hints
