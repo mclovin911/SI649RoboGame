@@ -299,7 +299,7 @@ if __name__ == '__main__':
     
     # Time loop
     game_time = team1.getGameTime()
-    print(game_time)
+    # print(game_time)
     if 'curtime' in game_time.keys():
         set_time = game_time['curtime'] - 1
         cur_time = game_time['curtime']
@@ -310,22 +310,27 @@ if __name__ == '__main__':
         sys_time.write("Current time is: %.2f"%cur_time)
         
         # set interest robot
-        while cur_time - set_time < 1:
-            cur_time = team1.getGameTime()['curtime']
-        team1.setRobotInterest([game.expire[interest_ptr]])
-        set_time = cur_time
-        print("Set interest Robot to be: %d"%game.expire[interest_ptr][0])
-        status.write("Set interest Robot to be: %d"%game.expire[interest_ptr][0])
-        interest_ptr = interest_ptr + 1
+        
+        team1.setRobotInterest([game.expire[interest_ptr][0], game.expire[interest_ptr][0]])
+        print("Set interest Robot to be: %d"%(game.expire[interest_ptr][0]))
+        status.write("Set interest Robot to be: %d"%(game.expire[interest_ptr][0]))
+        if interest_ptr < 100:
+            interest_ptr = interest_ptr + 1
         
         # Grab hints
+        while cur_time - set_time < 1:
+            cur_time = team1.getGameTime()['curtime']
+            time.sleep(0.1)
+        set_time = cur_time
         hints = team1.getHints()
         hints_json = json.dumps(team1.getAllPredictionHints())
-        print("Current Hints:")
-        print(hints_json)
+        # print("Current Hints:")
+        # print(hints_json)
         game.updateData(hints_json)
-        print("Current Data: ")
-        print(game.data)
+        # print("Current Data: ")
+        # for key in game.data.keys():
+        #     print(key)
+        #     print(game.data[key])
         
         # choose the robot that needs to be betted on
         while bet_ptr < 100:
