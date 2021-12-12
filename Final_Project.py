@@ -222,13 +222,14 @@ class FriendshipGame:
             alt.Y('min:Q')
         )
         
-        vis_friendship = alt.layer(vis_line, 
-                                   vis_scatter, 
-                                   vis_prediction,
-                                   family_scatter,
-                                   family_bar1,
-                                   family_bar2,
-                                   title = "Robot " + str(robot_id)).configure_axis(grid=False)
+        vis_friendship = alt.layer(
+            family_scatter,
+            family_bar1,
+            family_bar2,
+            vis_line, 
+            vis_scatter, 
+            vis_prediction,
+            title = "Robot " + str(robot_id)).configure_axis(grid=False)
         return [vis_friendship, vis_data[2]]
     
     def __init__(self):
