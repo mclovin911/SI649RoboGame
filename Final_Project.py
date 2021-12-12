@@ -311,7 +311,8 @@ if __name__ == '__main__':
         sys_time.write("Current time is: %.2f"%cur_time)
         
         # set interest robot
-        
+        if interest_ptr < bet_ptr:
+            interest_ptr = bet_ptr
         team1.setRobotInterest([game.expire[interest_ptr][0], game.expire[interest_ptr][0]])
         print("Set interest Robot to be: %d"%(game.expire[interest_ptr][0]))
         status.write("Set interest Robot to be: %d"%(game.expire[interest_ptr][0]))
@@ -342,7 +343,7 @@ if __name__ == '__main__':
             cur_time = game_time['curtime']
             print("Current time is: %.2f"%cur_time)
             sys_time.write("Current time is: %.2f"%cur_time)
-            if game.expire[bet_ptr][1] - cur_time < 3:
+            if game.expire[bet_ptr][1] - cur_time < 2:
                 data = game.printVisual(game.expire[bet_ptr][0], tree)
                 if data == []:
                     team1.setBets({game.expire[bet_ptr][0]: 50})
