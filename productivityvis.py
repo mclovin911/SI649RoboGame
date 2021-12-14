@@ -5,26 +5,25 @@ import pandas as pd
 import streamlit as st
 import numpy as np
 
-#Title
-
 
 def drawvis(max_key1, max_key2):
     if 'curtime' in game.getGameTime().keys():
         print(game.getGameTime()['curtime'])
+        hints = game.getHints()
         partHints = game.getAllPartHints()
         parthints_df = pd.read_json(json.dumps(partHints),orient='records')
         robots = game.getRobotInfo()
-        robots = robots[robots.winner != 0]
         parts_df = parthints_df.merge(robots, on='id', how='inner').drop_duplicates(ignore_index=True)
 
         productivities = parts_df.pivot(index=['id','Productivity','expires'], columns='column', values='value',).reset_index()
         for i in range(len(productivities['Productivity'])):
-            if productivities.loc[i,'Productivity'] > 0:
+            if productivities.loc[i,'Productivity'] >= 0:
                 productivities.loc[i,'Productivity'] = 1
-            elif productivities.loc[i,'Productivity'] <= 0:
+            elif productivities.loc[i,'Productivity'] < 0:
                 productivities.loc[i,'Productivity'] = 0
 
-        expiredrobot = alt.Chart(productivities).mark_point().encode(
+        expiredrobot = alt.Chart(productivities).mark_point().transform_filter(
+            (alt.datum.Productivity == 1) | (alt.datum.Productivity == 0)).encode(
             x=max_key1,
             y=max_key2,
             color = 'Productivity:N',
@@ -32,10 +31,10 @@ def drawvis(max_key1, max_key2):
         )
 
         incomingrobot = alt.Chart(productivities).mark_point(color='red').transform_filter(
-            ((alt.datum.expires - game.getGameTime()['curtime']) <= 2) & ((alt.datum.expires - game.getGameTime()['curtime'])>= 0) ).encode(
+            ((alt.datum.expires - game.getGameTime()['curtime']) <= 3) & ((alt.datum.expires - game.getGameTime()['curtime'])>= 0) ).encode(
             x=max_key1,
             y=max_key2,
-            tooltip = 'id'
+            tooltip = ['id','expires']
         )
 
         text_id = incomingrobot.mark_text(
@@ -51,13 +50,10 @@ def drawvis(max_key1, max_key2):
     else:
         quit
 
-def productivity():
-    
-    return 1
 
 
 def findkey():
-    if game.getGameTime()['curtime'] > 25:
+    if game.getGameTime()['curtime'] > 30:
         for i in np.arange(0,70):
             print(game.getGameTime()['curtime'])
             hints = game.getHints()
@@ -79,11 +75,11 @@ def findkey():
             for part in part_cnt_df[part_cnt_df>=2].index.values:
                 p_df = quantile[quantile.column == part]
                 p_corr = p_df['value'].corr(p_df['Productivity'])
-                if abs(p_corr)>0.3:
+                if abs(p_corr)>0.4:
                     a += 1
                 imporant_part[part]=abs(p_corr)
                 print(part,p_corr)
-            if a == 2:
+            if a == 2 :
                 max_key1 = max(imporant_part, key=imporant_part.get)
                 del imporant_part[max_key1]
                 max_key2 = max(imporant_part, key=imporant_part.get)
@@ -92,6 +88,8 @@ def findkey():
                 return (max_key1,max_key2)
             time.sleep(6)
 ###### Making of all the charts
+
+
 
 
 if __name__ == '__main__':
@@ -111,14 +109,15 @@ if __name__ == '__main__':
         print("waiting to launch... game will start in " + str(int(timetogo)))
         time.sleep(1)
 
-    time.sleep(150)
+    time.sleep(180)
     a,b = findkey()
     predVis = st.empty()
     predtime = st.empty()
     while 'curtime' in game.getGameTime().keys():
+        game.getHints()
         vis = drawvis(a,b)
         predVis.write(vis)
         predtime.write(game.getGameTime()['curtime'])
-        time.sleep(6)
+        time.sleep(3)
 
     
