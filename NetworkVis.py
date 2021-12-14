@@ -102,16 +102,16 @@ for item in connectionCount:
 
 count2 = {'robotN': count.keys(), 'connectionN': count.values()}
 df = pd.DataFrame.from_dict(count2)
-bar = alt.Chart(df).mark_bar().transform_window(
+bar = alt.Chart(data=df,width=700).mark_bar().transform_window(
     sort=[alt.SortField('connectionN',order='descending')],
     rank='rank(*)'
 ).transform_filter(
     alt.datum.rank<10
 ).encode(
     alt.Y('robotN:N', sort=alt.EncodingSortField(
-        field='connectionN', order='descending')),
-    alt.X('connectionN:Q'),
+        field='connectionN', order='descending'), title='Robot ID'),
+    alt.X('connectionN:Q', title='Connection Number'),
     color=alt.value('#F2B138')   # And if it's not true it sets the bar steelblue.
- )
+ ).properties(title='Top 10 Popular Robots')
 
 st.altair_chart(bar)
